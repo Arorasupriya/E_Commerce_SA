@@ -1,9 +1,9 @@
 import 'package:e_commerce_app/constants/color_constants.dart';
-import 'package:e_commerce_app/screens/dashboard_screens/cart.dart';
 import 'package:e_commerce_app/screens/dashboard_screens/category.dart';
 import 'package:e_commerce_app/screens/dashboard_screens/dashboard_home.dart';
 import 'package:e_commerce_app/screens/dashboard_screens/like_products.dart';
 import 'package:e_commerce_app/screens/dashboard_screens/user_profile.dart';
+import 'package:e_commerce_app/screens/detail_screens/my_cart.dart';
 import 'package:flutter/material.dart';
 
 class BottomAppBarScreen extends StatefulWidget {
@@ -76,10 +76,8 @@ class BottomAppBarScreenSate extends State<BottomAppBarScreen> {
             InkWell(
               borderRadius: BorderRadius.circular(2),
               onTap: () {
-                Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) => const CartScreen()));
+                Navigator.push(context,
+                    MaterialPageRoute(builder: (context) => const MyCart()));
               },
               child: const ImageIcon(
                 AssetImage("assets/icons/ic_cart.png"),
