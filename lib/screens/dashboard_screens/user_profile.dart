@@ -1,3 +1,5 @@
+import 'package:e_commerce_app/screens/onbording_screens/login_screen.dart';
+import 'package:e_commerce_app/sharedpreference/sharedpreference.dart';
 import 'package:flutter/material.dart';
 
 class UserProfile extends StatefulWidget {
@@ -10,9 +12,16 @@ class UserProfile extends StatefulWidget {
 class _UserProfileState extends State<UserProfile> {
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
+    return Scaffold(
         body: Center(
-      child: Text("User Profile"),
+      child: TextButton(
+          onPressed: () {
+            MySharedPreference().setSharedPrefValue(strToken: '');
+            setState(() {});
+            Navigator.pushReplacement(context,
+                MaterialPageRoute(builder: (context) => const SignInScreen()));
+          },
+          child: const Text("SignOut")),
     ));
   }
 }

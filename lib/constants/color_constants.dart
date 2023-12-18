@@ -6,6 +6,8 @@ class ColorsConstants {
   static const Color descriptionFontColor = Color(0xFF9f9f9f); //999999
   static Color bgLightColor = Colors.blueGrey.shade50; //Color(0xFFE3E3E3);
   static const Color wholeBgColor = Colors.white;
+  static Color gradientLightColor = Colors.white;
+  static Color gradientDarkColor = Color(0xFFFF660E);
 }
 
 extension HexColor on Color {

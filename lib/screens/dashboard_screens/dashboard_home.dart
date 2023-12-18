@@ -1,5 +1,5 @@
 import 'package:carousel_slider/carousel_slider.dart';
-import 'package:e_commerce_app/api_helper/APIHelper.dart';
+import 'package:e_commerce_app/api_helper/api_helper.dart';
 import 'package:e_commerce_app/api_helper/app_variables.dart';
 import 'package:e_commerce_app/constants/color_constants.dart';
 import 'package:e_commerce_app/helper_classes/custom_widget.dart';

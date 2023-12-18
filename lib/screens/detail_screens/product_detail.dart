@@ -1,11 +1,15 @@
 import 'package:carousel_slider/carousel_slider.dart';
-import 'package:e_commerce_app/api_helper/APIHelper.dart';
+import 'package:e_commerce_app/api_helper/api_helper.dart';
 import 'package:e_commerce_app/api_helper/app_variables.dart';
+import 'package:e_commerce_app/bloc/cart_bloc/cart_bloc.dart';
 import 'package:e_commerce_app/constants/color_constants.dart';
 import 'package:e_commerce_app/helper_classes/custom_widget.dart';
 import 'package:e_commerce_app/helper_classes/my_text_styles.dart';
 import 'package:e_commerce_app/models/dashboard_models/latest_product_mpdel.dart';
+import 'package:e_commerce_app/models/detail_screens_model/add_cart%20_model.dart';
+import 'package:e_commerce_app/screens/detail_screens/my_cart.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 class ProductDetailsScreen extends StatefulWidget {
   int getTappedIndexNumber = 0;
@@ -16,7 +20,10 @@ class ProductDetailsScreen extends StatefulWidget {
   State<ProductDetailsScreen> createState() => _ProductDetailsScreenState();
 }
 
-class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
+class _ProductDetailsScreenState extends State<ProductDetailsScreen>
+    with TickerProviderStateMixin {
+  bool isAddToCartTapped = false;
+
   List<Widget> imageSliders = [];
   List<Color> availableColorList = [
     Colors.black,
@@ -33,7 +40,15 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
   int selectedButtonIndex = 0;
   int _itemCount = 0;
 
+  List<Products>? getProductList;
+
   Future<LatestProductModel>? getLatestProductList;
+
+  late AnimationController sController =
+      AnimationController(vsync: this, duration: const Duration(seconds: 2))
+        ..repeat(reverse: true);
+  late Animation<double> animation =
+      CurvedAnimation(parent: sController, curve: Curves.fastOutSlowIn);
 
   @override
   void initState() {
@@ -60,7 +75,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
               );
             } else if (snapshot.hasData) {
               var getProductModel = snapshot.data;
-              var getProductList = getProductModel!.products;
+              getProductList = getProductModel!.products;
               return Stack(children: [
                 Positioned(
                   top: 0,
@@ -72,28 +87,52 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                     child: Padding(
                       padding: const EdgeInsets.only(
                           left: 8, right: 8, top: 8, bottom: 0),
-                      child: SingleChildScrollView(
-                        child: Column(
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                IconButton(
-                                    style: const ButtonStyle(
-                                        backgroundColor:
-                                            MaterialStatePropertyAll(
-                                                ColorsConstants.wholeBgColor)),
-                                    color: ColorsConstants.mainTitleFontColor,
-                                    onPressed: () {
-                                      Navigator.pop(context);
-                                    },
-                                    icon: const ImageIcon(
-                                      AssetImage(
-                                          "assets/icons/ic_left_arrow.png"),
-                                      size: 15,
-                                    )),
-                                Row(
-                                  children: [
+                      child: Column(
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              IconButton(
+                                  style: const ButtonStyle(
+                                      backgroundColor: MaterialStatePropertyAll(
+                                          ColorsConstants.wholeBgColor)),
+                                  color: ColorsConstants.mainTitleFontColor,
+                                  onPressed: () {
+                                    Navigator.pop(context);
+                                  },
+                                  icon: const ImageIcon(
+                                    AssetImage(
+                                        "assets/icons/ic_left_arrow.png"),
+                                    size: 15,
+                                  )),
+                              Row(
+                                children: [
+                                  IconButton(
+                                      style: const ButtonStyle(
+                                          backgroundColor:
+                                              MaterialStatePropertyAll(
+                                                  ColorsConstants
+                                                      .wholeBgColor)),
+                                      color: ColorsConstants.mainTitleFontColor,
+                                      onPressed: () {},
+                                      icon: const ImageIcon(
+                                        AssetImage("assets/icons/ic_share.png"),
+                                        size: 15,
+                                      )),
+                                  IconButton(
+                                      style: const ButtonStyle(
+                                          backgroundColor:
+                                              MaterialStatePropertyAll(
+                                                  ColorsConstants
+                                                      .wholeBgColor)),
+                                      color: ColorsConstants.mainTitleFontColor,
+                                      onPressed: () {},
+                                      icon: const ImageIcon(
+                                        AssetImage(
+                                            "assets/icons/ic_search.png"),
+                                        size: 15,
+                                      )),
+                                  Stack(children: [
                                     IconButton(
                                         style: const ButtonStyle(
                                             backgroundColor:
@@ -102,86 +141,104 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                                                         .wholeBgColor)),
                                         color:
                                             ColorsConstants.mainTitleFontColor,
-                                        onPressed: () {},
+                                        onPressed: () {
+                                          Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                  builder: (context) =>
+                                                      const MyCart()));
+                                        },
                                         icon: const ImageIcon(
                                           AssetImage(
-                                              "assets/icons/ic_share.png"),
-                                          size: 15,
+                                              "assets/icons/ic_cart.png"),
+                                          size: 20,
                                         )),
-                                    IconButton(
-                                        style: const ButtonStyle(
-                                            backgroundColor:
-                                                MaterialStatePropertyAll(
-                                                    ColorsConstants
-                                                        .wholeBgColor)),
-                                        color:
-                                            ColorsConstants.mainTitleFontColor,
-                                        onPressed: () {},
-                                        icon: const ImageIcon(
-                                          AssetImage(
-                                              "assets/icons/ic_search.png"),
-                                          size: 15,
-                                        )),
-                                  ],
-                                )
-                              ],
-                            ),
-                            hSpacer(),
-                            Stack(
-                              children: [
-                                CarouselSlider(
-                                  carouselController: controller,
-                                  items: createImageView(getProductList![
+                                    isAddToCartTapped == true
+                                        ? ScaleTransition(
+                                            scale: animation,
+                                            child: CircleAvatar(
+                                              radius: 10,
+                                              backgroundColor: ColorsConstants
+                                                  .buttonThemeColor,
+                                              child: Text(
+                                                "$_itemCount",
+                                                style: mTextStyle12(
+                                                    mFontColor: ColorsConstants
+                                                        .wholeBgColor),
+                                              ),
+                                            ),
+                                          )
+                                        : CircleAvatar(
+                                            radius: 10,
+                                            backgroundColor: ColorsConstants
+                                                .buttonThemeColor,
+                                            child: Text(
+                                              "$_itemCount",
+                                              style: mTextStyle12(
+                                                  mFontColor: ColorsConstants
+                                                      .wholeBgColor),
+                                            ),
+                                          )
+                                  ]),
+                                ],
+                              )
+                            ],
+                          ),
+                          hSpacer(),
+                          Stack(
+                            children: [
+                              CarouselSlider(
+                                carouselController: controller,
+                                items: createImageView(
+                                    getProductList![widget.getTappedIndexNumber]
+                                        .images),
+                                options: CarouselOptions(
+                                    viewportFraction: 0.8,
+                                    autoPlay: false,
+                                    enlargeCenterPage: true,
+                                    aspectRatio: 16 / 9,
+                                    //16/9
+                                    onPageChanged: (index, reason) {
+                                      setState(() {
+                                        currentIndex = index;
+                                      });
+                                    }),
+                              ),
+                              Positioned(
+                                bottom: 10,
+                                left: MediaQuery.of(context).size.width * 0.4,
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: getProductList![
                                           widget.getTappedIndexNumber]
-                                      .images),
-                                  options: CarouselOptions(
-                                      viewportFraction: 0.8,
-                                      autoPlay: false,
-                                      enlargeCenterPage: true,
-                                      aspectRatio: 16 / 9,
-                                      //16/9
-                                      onPageChanged: (index, reason) {
-                                        setState(() {
-                                          currentIndex = index;
-                                        });
-                                      }),
+                                      .images!
+                                      .asMap()
+                                      .entries
+                                      .map((e) {
+                                    return GestureDetector(
+                                      onTap: () =>
+                                          controller.animateToPage(e.key),
+                                      child: Container(
+                                        width: 10.0,
+                                        height: 10.0,
+                                        margin: const EdgeInsets.symmetric(
+                                            vertical: 8.0, horizontal: 4.0),
+                                        decoration: BoxDecoration(
+                                            shape: BoxShape.circle,
+                                            color: ColorsConstants
+                                                .mainTitleFontColor
+                                                .withOpacity(
+                                                    currentIndex == e.key
+                                                        ? 0.9
+                                                        : 0.3)),
+                                      ),
+                                    );
+                                  }).toList(),
                                 ),
-                                Positioned(
-                                  bottom: 10,
-                                  left: MediaQuery.of(context).size.width * 0.4,
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: getProductList[
-                                            widget.getTappedIndexNumber]
-                                        .images!
-                                        .asMap()
-                                        .entries
-                                        .map((e) {
-                                      return GestureDetector(
-                                        onTap: () =>
-                                            controller.animateToPage(e.key),
-                                        child: Container(
-                                          width: 10.0,
-                                          height: 10.0,
-                                          margin: const EdgeInsets.symmetric(
-                                              vertical: 8.0, horizontal: 4.0),
-                                          decoration: BoxDecoration(
-                                              shape: BoxShape.circle,
-                                              color: ColorsConstants
-                                                  .mainTitleFontColor
-                                                  .withOpacity(
-                                                      currentIndex == e.key
-                                                          ? 0.9
-                                                          : 0.3)),
-                                        ),
-                                      );
-                                    }).toList(),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
                     ),
                   ),
@@ -197,182 +254,189 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                               topLeft: Radius.circular(30),
                               topRight: Radius.circular(30))),
                       child: Padding(
-                        padding: const EdgeInsets.all(11.0),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 8.0),
-                              child: Text(
-                                getProductList[widget.getTappedIndexNumber]
-                                    .name
-                                    .toString(),
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                                style: mTextStyle16(
-                                    mFontColor:
-                                        ColorsConstants.mainTitleFontColor,
-                                    mWeight: FontWeight.bold),
-                              ),
-                            ),
-                            hSpacer(mHeight: 5),
-                            Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 8.0),
-                              child: Text(
-                                "\$ ${getProductList[widget.getTappedIndexNumber].purchasePrice}",
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: mTextStyle16(
-                                    mFontColor:
-                                        ColorsConstants.mainTitleFontColor,
-                                    mWeight: FontWeight.bold),
-                              ),
-                            ),
-                            hSpacer(),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.start,
-                              children: [
-                                Container(
-                                  width: 60,
-                                  decoration: BoxDecoration(
-                                      color: ColorsConstants.buttonThemeColor,
-                                      borderRadius: BorderRadius.circular(12)),
-                                  child: Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceEvenly,
-                                    children: [
-                                      const Icon(
-                                        Icons.star,
-                                        size: 16,
-                                        color: ColorsConstants.wholeBgColor,
-                                      ),
-                                      Text(
-                                        "${getProductList[widget.getTappedIndexNumber].reviewsCount}",
-                                        style: mTextStyle12(
-                                            mFontColor:
-                                                ColorsConstants.wholeBgColor,
-                                            mWeight: FontWeight.bold),
-                                      )
-                                    ],
-                                  ),
-                                ),
-                                wSpacer(mWidth: 5),
-                                Text(
-                                  "(${getProductList[widget.getTappedIndexNumber].reviewsCount} Review)",
-                                  style: mTextStyle12(
-                                      mFontColor:
-                                          ColorsConstants.descriptionFontColor),
-                                ),
-                              ],
-                            ),
-                            hSpacer(),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.end,
-                              children: [
-                                Text(
-                                  "Seller:",
-                                  style: mTextStyle12(
-                                      mFontColor:
-                                          ColorsConstants.mainTitleFontColor,
-                                      mWeight: FontWeight.bold),
-                                ),
-                                Text(
-                                  " Name of seller ",
-                                  overflow: TextOverflow.ellipsis,
-                                  maxLines: 1,
-                                  style: mTextStyle12(
-                                      mFontColor:
-                                          ColorsConstants.mainTitleFontColor,
-                                      mWeight: FontWeight.bold),
-                                ),
-                              ],
-                            ),
-                            hSpacer(mHeight: 5),
-                            Text(
-                              "Color",
-                              style: mTextStyle16(
-                                  mFontColor:
-                                      ColorsConstants.mainTitleFontColor,
-                                  mWeight: FontWeight.bold),
-                            ),
-                            Row(
-                              children: availableColorList
-                                  .asMap()
-                                  .entries
-                                  .map((e) => InkWell(
-                                        onTap: () {
-                                          print("${e.key}");
-                                          currentIndexColor = e.key;
-                                          setState(() {});
-                                        },
-                                        child: Padding(
-                                          padding: const EdgeInsets.all(5.0),
-                                          child: CircleAvatar(
-                                            backgroundColor:
-                                                currentIndexColor == e.key
-                                                    ? Colors.grey
-                                                    : Colors.white,
-                                            radius: 13,
-                                            child: CircleAvatar(
-                                              backgroundColor: e.value,
-                                              radius: 10,
-                                            ),
-                                          ),
-                                        ),
-                                      ))
-                                  .toList(),
-                            ),
-                            hSpacer(),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                              children: tabTitleList
-                                  .asMap()
-                                  .entries
-                                  .map((e) => ElevatedButton(
-                                      style: ButtonStyle(
-                                          elevation: MaterialStateProperty.all<
-                                              double>(0),
-                                          backgroundColor:
-                                              selectedButtonIndex == e.key
-                                                  ? MaterialStateProperty.all<
-                                                          Color>(
-                                                      ColorsConstants
-                                                          .buttonThemeColor)
-                                                  : MaterialStateProperty.all<
-                                                          Color>(
-                                                      ColorsConstants
-                                                          .wholeBgColor)),
-                                      onPressed: () {
-                                        print("taped button => ${e.key}");
-                                        selectedButtonIndex = e.key;
-                                        setState(() {});
-                                      },
-                                      child: Text(
-                                        e.value,
-                                        style: const TextStyle(
-                                            fontSize: 11,
-                                            fontWeight: FontWeight.bold,
-                                            color: ColorsConstants
-                                                .mainTitleFontColor),
-                                      )))
-                                  .toList(),
-                            ),
-                            Flexible(
-                              flex: 1,
-                              child: SingleChildScrollView(
+                        padding: const EdgeInsets.only(
+                            left: 10, right: 10, top: 10, bottom: 75),
+                        child: SingleChildScrollView(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.start,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 8.0),
                                 child: Text(
-                                    "Something Something This widget applies a function independently to each pixel of child's content, according to the ColorFilter specified. Use the ColorFilter.mode constructor to apply a Color using a BlendMode. Use the BackdropFilter widget instead, if the ColorFilter needs to be applied onto the content beneath child This widget applies a function independently to each pixel of child's content, according to the ColorFilter specified. Use the ColorFilter.mode constructor to apply a Color using a BlendMode. Use the BackdropFilter widget instead, if the ColorFilter needs to be applied onto the content beneath child",
-                                    textAlign: TextAlign.left,
+                                  getProductList![widget.getTappedIndexNumber]
+                                      .name
+                                      .toString(),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: mTextStyle16(
+                                      mFontColor:
+                                          ColorsConstants.mainTitleFontColor,
+                                      mWeight: FontWeight.bold),
+                                ),
+                              ),
+                              hSpacer(mHeight: 5),
+                              Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 8.0),
+                                child: Text(
+                                  "\$ ${getProductList![widget.getTappedIndexNumber].purchasePrice}",
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: mTextStyle16(
+                                      mFontColor:
+                                          ColorsConstants.mainTitleFontColor,
+                                      mWeight: FontWeight.bold),
+                                ),
+                              ),
+                              hSpacer(),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.start,
+                                children: [
+                                  Container(
+                                    width: 60,
+                                    decoration: BoxDecoration(
+                                        color: ColorsConstants.buttonThemeColor,
+                                        borderRadius:
+                                            BorderRadius.circular(12)),
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceEvenly,
+                                      children: [
+                                        const Icon(
+                                          Icons.star,
+                                          size: 16,
+                                          color: ColorsConstants.wholeBgColor,
+                                        ),
+                                        Text(
+                                          "${getProductList![widget.getTappedIndexNumber].reviewsCount}",
+                                          style: mTextStyle12(
+                                              mFontColor:
+                                                  ColorsConstants.wholeBgColor,
+                                              mWeight: FontWeight.bold),
+                                        )
+                                      ],
+                                    ),
+                                  ),
+                                  wSpacer(mWidth: 5),
+                                  Text(
+                                    "(${getProductList![widget.getTappedIndexNumber].reviewsCount} Review)",
                                     style: mTextStyle12(
                                         mFontColor: ColorsConstants
-                                            .descriptionFontColor,
-                                        mWeight: FontWeight.w400)),
+                                            .descriptionFontColor),
+                                  ),
+                                ],
                               ),
-                            )
-                          ],
+                              hSpacer(),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                children: [
+                                  Text(
+                                    "Seller:",
+                                    style: mTextStyle12(
+                                        mFontColor:
+                                            ColorsConstants.mainTitleFontColor,
+                                        mWeight: FontWeight.bold),
+                                  ),
+                                  Text(
+                                    " Name of seller ",
+                                    overflow: TextOverflow.ellipsis,
+                                    maxLines: 1,
+                                    style: mTextStyle12(
+                                        mFontColor:
+                                            ColorsConstants.mainTitleFontColor,
+                                        mWeight: FontWeight.bold),
+                                  ),
+                                ],
+                              ),
+                              hSpacer(mHeight: 5),
+                              Text(
+                                "Color",
+                                style: mTextStyle16(
+                                    mFontColor:
+                                        ColorsConstants.mainTitleFontColor,
+                                    mWeight: FontWeight.bold),
+                              ),
+                              Row(
+                                children: availableColorList
+                                    .asMap()
+                                    .entries
+                                    .map((e) => InkWell(
+                                          onTap: () {
+                                            print("${e.key}");
+                                            currentIndexColor = e.key;
+                                            setState(() {});
+                                          },
+                                          child: Padding(
+                                            padding: const EdgeInsets.all(5.0),
+                                            child: CircleAvatar(
+                                              backgroundColor:
+                                                  currentIndexColor == e.key
+                                                      ? Colors.grey
+                                                      : Colors.white,
+                                              radius: 13,
+                                              child: CircleAvatar(
+                                                backgroundColor: e.value,
+                                                radius: 10,
+                                              ),
+                                            ),
+                                          ),
+                                        ))
+                                    .toList(),
+                              ),
+                              hSpacer(),
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceEvenly,
+                                children: tabTitleList
+                                    .asMap()
+                                    .entries
+                                    .map((e) => ElevatedButton(
+                                        style: ButtonStyle(
+                                            elevation: MaterialStateProperty
+                                                .all<double>(0),
+                                            backgroundColor:
+                                                selectedButtonIndex ==
+                                                        e.key
+                                                    ? MaterialStateProperty.all<
+                                                            Color>(
+                                                        ColorsConstants
+                                                            .buttonThemeColor)
+                                                    : MaterialStateProperty.all<
+                                                            Color>(
+                                                        ColorsConstants
+                                                            .wholeBgColor)),
+                                        onPressed: () {
+                                          print("taped button => ${e.key}");
+                                          selectedButtonIndex = e.key;
+                                          setState(() {});
+                                        },
+                                        child: Text(
+                                          e.value,
+                                          style: const TextStyle(
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.bold,
+                                              color: ColorsConstants
+                                                  .mainTitleFontColor),
+                                        )))
+                                    .toList(),
+                              ),
+                              Text(
+                                  "${getProductList![widget.getTappedIndexNumber].metaDescription}",
+                                  textAlign: TextAlign.left,
+                                  style: mTextStyle12(
+                                      mFontColor:
+                                          ColorsConstants.descriptionFontColor,
+                                      mWeight: FontWeight.w400))
+                              /*Container(
+                                child: Html(
+                                    data: getProductList![
+                                            widget.getTappedIndexNumber]
+                                        .details),
+                              )*/
+                            ],
+                          ),
                         ),
                       )),
                 ),
@@ -384,7 +448,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
       floatingActionButton: Padding(
-        padding: const EdgeInsets.all(8.0),
+        padding: const EdgeInsets.symmetric(horizontal: 11),
         child: Container(
           width: size.width,
           height: 50,
@@ -408,7 +472,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                         color: ColorsConstants.wholeBgColor,
                       ))),
                   child: Padding(
-                    padding: const EdgeInsets.all(8.0),
+                    padding: const EdgeInsets.all(2.0),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       crossAxisAlignment: CrossAxisAlignment.center,
@@ -432,11 +496,12 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                             Icons.remove,
                             fill: 1.0,
                             color: ColorsConstants.wholeBgColor,
+                            size: 14,
                           ),
                         ),
                         Text(
-                          "$_itemCount",
-                          style: mTextStyle16(
+                          _itemCount.toString(),
+                          style: mTextStyle12(
                               mFontColor: ColorsConstants.wholeBgColor,
                               mWeight: FontWeight.bold),
                         ),
@@ -452,25 +517,77 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                             Icons.add,
                             fill: 1.0,
                             color: ColorsConstants.wholeBgColor,
+                            size: 14,
                           ),
                         ),
                       ],
                     ),
                   ),
                 ),
-                ElevatedButton(
-                    style: ButtonStyle(
-                        fixedSize: MaterialStateProperty.all<Size>(
-                            const Size(150, 40)),
-                        backgroundColor: MaterialStateProperty.all<Color>(
-                            ColorsConstants.buttonThemeColor)),
-                    onPressed: () {},
-                    child: Text(
-                      "Add to Cart",
-                      style: mTextStyle12(
-                          mFontColor: ColorsConstants.wholeBgColor,
-                          mWeight: FontWeight.bold),
-                    )),
+                BlocBuilder<CartBloc, CartState>(
+                  builder: (context, state) {
+                    return ElevatedButton(
+                        style: ButtonStyle(
+                            fixedSize: MaterialStateProperty.all<Size>(
+                                const Size(150, 40)),
+                            backgroundColor: MaterialStateProperty.all<Color>(
+                                ColorsConstants.buttonThemeColor)),
+                        onPressed: _itemCount == 0
+                            ? null
+                            : () {
+                                print("tap add to cart ");
+                                var productId =
+                                    getProductList![widget.getTappedIndexNumber]
+                                        .id;
+                                Map<String, dynamic> bodyParameter = {
+                                  "id": productId!.toString(),
+                                  "quantity": _itemCount.toString()
+                                };
+                                context.read<CartBloc>().add(GetCartResponse(
+                                    bodyParameter: bodyParameter));
+                                if (state is CartLoadedState) {
+                                  AddToCartModel data;
+                                  data = state.addToCartModel;
+                                  if (data.status == 0) {
+                                    isAddToCartTapped = false;
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                            backgroundColor: ColorsConstants
+                                                .buttonThemeColor,
+                                            content: Text(
+                                              data.message.toString(),
+                                              maxLines: 2,
+                                            )));
+                                    _itemCount = 0;
+                                    setState(() {});
+                                  } else if (data.status == 1) {
+                                    isAddToCartTapped = true;
+                                    ScaffoldMessenger.of(context)
+                                        .showSnackBar(SnackBar(
+                                            content: Text(
+                                      data.message.toString(),
+                                      maxLines: 2,
+                                    )));
+                                  }
+                                  setState(() {});
+                                }
+                                if (state is CartErrorState) {
+                                  ScaffoldMessenger.of(context)
+                                      .showSnackBar(SnackBar(
+                                          content: Text(
+                                    state.msgError.toString(),
+                                    maxLines: 2,
+                                  )));
+                                }
+                              },
+                        child: Text(
+                          "Add to Cart",
+                          style: mTextStyle12(
+                              mFontColor: ColorsConstants.wholeBgColor,
+                              mWeight: FontWeight.bold),
+                        ));
+                  },
+                ),
               ],
             ),
           ),

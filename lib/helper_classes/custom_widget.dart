@@ -15,6 +15,7 @@ InputDecoration myDecoration({
   Color mySuffixIconColor = Colors.blue,
 }) {
   return InputDecoration(
+    contentPadding: const EdgeInsets.symmetric(horizontal: 10),
     suffixIconColor: mySuffixIconColor,
     hintText: mHintText,
     hintStyle:
